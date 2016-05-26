@@ -29,10 +29,12 @@ var appDir = path.join(__dirname, 'app');
  * (*angular*, *angular-animate*, *angular-route*, *angular-aria*, and *angular-messages* are automatically loaded)
  * @param {Array}  config.moduleJs Module JavaScript files
  * @param {Array}  config.moduleCss Module CSS files
+ * @param {string} [config.outPath="dist/docs"] Output path where generated docs are placed
  * @param {string} [config.repositoryUrl] Repository base URL
  * @param {boolean} [config.debug=false] Debug mode
  */
 module.exports = function (gulp, config) {
+  var outPath = config.outPath || 'dist/docs';
 
   gulp = require('gulp-help')(gulp);
 
@@ -49,15 +51,16 @@ module.exports = function (gulp, config) {
   });
 
   gulp.task('docs:clean', false, function () {
-    return del('dist/docs');
+    return del(outPath);
   });
 
   // Parses ngDocs
   gulp.task('docs:dgeni', false, function() {
     var dgeniPackage = require('./dgeni-package')
-      .config(function(log, readFilesProcessor) {
+      .config(function(log, readFilesProcessor, writeFilesProcessor) {
         log.level = config.debug ? 'info' : 'error';
         readFilesProcessor.basePath = config.basePath;
+        writeFilesProcessor.outputFolder = outPath;
       })
       .config(function (componentDataProcessor) {
         componentDataProcessor.repositoryUrl = config.repositoryUrl;
@@ -73,7 +76,7 @@ module.exports = function (gulp, config) {
       '!' + appDir + '/partials/**/*.html',
       '!' + appDir + '/index.html'
     ])
-      .pipe(gulp.dest('dist/docs'));
+      .pipe(gulp.dest(outPath));
   });
 
   // Generates AngularJS config constants
@@ -84,23 +87,23 @@ module.exports = function (gulp, config) {
       stream: true
     })
       .pipe(rename('config-data.js'))
-      .pipe(gulp.dest('dist/docs/js'));
+      .pipe(gulp.dest(outPath + '/js'));
   });
 
   // Concatenates and uglifies JS
   gulp.task('docs:js', false, ['docs:app', 'docs:config', 'docs:html2js', 'docs:dgeni', 'docs:demos:data'], function() {
-    return gulp.src('dist/docs/js/**/*.js')
+    return gulp.src(outPath + '/js/**/*.js')
       .pipe(ngAnnotate())
       .pipe(concat('docs.js'))
       .pipe(gulpif(!config.debug, uglify()))
-      .pipe(gulp.dest('dist/docs'));
+      .pipe(gulp.dest(outPath));
   });
 
   // Concatenates CSS
   gulp.task('docs:css', false, ['docs:app'], function() {
     return gulp.src(appDir + '/css/**/*.css')
       .pipe(concat('docs.css'))
-      .pipe(gulp.dest('dist/docs'));
+      .pipe(gulp.dest(outPath));
   });
 
   // Converts HTML to JS
@@ -111,14 +114,14 @@ module.exports = function (gulp, config) {
         prefix: 'partials/'
       }))
       .pipe(concat('templates.js'))
-      .pipe(gulp.dest('dist/docs/js'));
+      .pipe(gulp.dest(outPath + '/js'));
   });
 
   // Compiles index template
   gulp.task('docs:index', false, function() {
     return gulp.src(appDir + '/index.html')
       .pipe(template({config: config}))
-      .pipe(gulp.dest('dist/docs'));
+      .pipe(gulp.dest(outPath));
   });
 
   // Generates demo data
@@ -127,21 +130,21 @@ module.exports = function (gulp, config) {
       .pipe(util.parseDemoFiles(config.modulePrefix))
       .pipe(ngConstant({name: 'docsApp.demo-data'}))
       .pipe(rename('demo-data.js'))
-      .pipe(gulp.dest('dist/docs/js'));
+      .pipe(gulp.dest(outPath + '/js'));
   });
 
   // Copies demo files to `dist/docs/demo-partials` and prefixes CSS with demo ID as parent class.
   gulp.task('docs:demos:copy', false, function() {
     return gulp.src('src/**/demo*/**/*')
       .pipe(gulpif(/.css$/, util.prefixDemoCss()))
-      .pipe(gulp.dest('dist/docs/demo-partials'));
+      .pipe(gulp.dest(outPath + '/demo-partials'));
   });
 
   // Concatenates demo scripts
   gulp.task('docs:demos:scripts', false, ['docs:demos:copy'], function() {
-    return gulp.src('dist/docs/demo-partials/**/*.js')
+    return gulp.src(outPath + '/demo-partials/**/*.js')
       .pipe(concat('docs-demo-scripts.js'))
-      .pipe(gulp.dest('dist/docs'));
+      .pipe(gulp.dest(outPath));
   });
 
   gulp.task('docs:serve', 'Serves docs', function() {

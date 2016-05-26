@@ -24,7 +24,6 @@ module.exports = new Package('sia', [
     {include: 'src/**/*.js', basePath: 'src'},
     {include: 'docs/**/*', basePath: 'docs', fileReader: 'ngdocFileReader'},
   ];
-  writeFilesProcessor.outputFolder = 'dist/docs';
 })
 
 .config(function(computeIdsProcessor, computePathsProcessor) {
