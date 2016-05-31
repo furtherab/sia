@@ -1,12 +1,14 @@
+var _ = require('lodash');
 var argv = require('yargs').argv;
 var del = require('del');
 var Dgeni = require('dgeni');
-var path = require('path');
+var path = require('canonical-path');
 var runSequence = require('run-sequence');
 
 var concat = require('gulp-concat');
 var gulpif = require('gulp-if');
 var ngAnnotate = require('gulp-ng-annotate');
+var combine = require('gulp-jsoncombine');
 var ngConstant = require('gulp-ng-constant');
 var ngHtml2js = require('gulp-ng-html2js');
 var rename = require('gulp-rename');
@@ -14,6 +16,7 @@ var server = require('gulp-webserver');
 var template = require('gulp-template');
 var uglify = require('gulp-uglify');
 var debug = require('gulp-debug');
+var gutil = require('gulp-util');
 
 var util = require('./util');
 
@@ -30,6 +33,8 @@ var appDir = path.join(__dirname, 'app');
  * (*angular*, *angular-animate*, *angular-route*, *angular-aria*, and *angular-messages* are automatically loaded)
  * @param {Array}  config.moduleJs Module JavaScript files
  * @param {Array}  config.moduleCss Module CSS files
+ * @param {boolean} [config.codepen=false] Show codepen links
+ * @param {string} [config.demoPath] Path where demos are stored. Default is a subdirectory "demo" of basePath
  * @param {string} [config.urlPath="/docs"] URL path with leading slash that serves the generated documents
  * @param {string} [config.outPath="dist/docs"] Output path where generated docs are located
  * @param {string} [config.repositoryUrl] Repository base URL
@@ -38,6 +43,7 @@ var appDir = path.join(__dirname, 'app');
 module.exports = function (gulp, config) {
   config.outPath = config.outPath || 'dist/docs';
   config.urlPath = config.urlPath || '/docs';
+  config.demoPath = config.demoPath || config.basePath + '/demo';
 
   gulp = require('gulp-help')(gulp);
 
@@ -47,6 +53,7 @@ module.exports = function (gulp, config) {
       'docs:dgeni',
       'docs:js',
       'docs:css',
+      'docs:demos:manifest',
       'docs:demos:data',
       'docs:demos:copy',
       'docs:demos:scripts'
@@ -79,16 +86,17 @@ module.exports = function (gulp, config) {
       '!' + appDir + '/partials/**/*.html',
       '!' + appDir + '/index.html'
     ])
-      .pipe(gulp.dest(config.outPath));
+    .pipe(gulp.dest(config.outPath));
   });
 
   // Generates AngularJS config constants
   gulp.task('docs:config', false, function () {
-    return ngConstant({
+    var ngConstantOptions = {
       name: 'docsApp.config-data',
       constants: {CONFIG: config},
       stream: true
-    })
+    };
+    return ngConstant(ngConstantOptions)
       .pipe(rename('config-data.js'))
       .pipe(gulp.dest(config.outPath + '/js'));
   });
@@ -127,18 +135,27 @@ module.exports = function (gulp, config) {
       .pipe(gulp.dest(config.outPath));
   });
 
-  // Generates demo data
-  gulp.task('docs:demos:data', false, function() {
-    return gulp.src(config.basePath + '/src/**/demo*/**/*')
-      .pipe(util.parseDemoFiles(config.modulePrefix))
+  // Generates demo data manifest json by merging all found manifest files
+  gulp.task('docs:demos:manifest', false, function() {
+    return gulp.src(config.demoPath + '/**/*.demo.json')
+      .pipe(combine('demo-data.json', util.mergeDemoManifests))
+      .pipe(gulp.dest(config.outPath + '/js'));
+  });
+
+  // Generates a angular constant module using the demo manifest
+  gulp.task('docs:demos:data', false, ['docs:demos:manifest'], function() {
+    return gulp.src(config.outPath + '/js/demo-data.json')
       .pipe(ngConstant({name: 'docsApp.demo-data'}))
       .pipe(rename('demo-data.js'))
       .pipe(gulp.dest(config.outPath + '/js'));
   });
 
-  // Copies demo files to `dist/docs/demo-partials` and prefixes CSS with demo ID as parent class.
-  gulp.task('docs:demos:copy', false, function() {
-    return gulp.src(config.basePath + '/src/**/demo*/**/*')
+  // Copies all files in the demo manifest to their respective folder, and prefixes CSS files
+  gulp.task('docs:demos:copy', false, ['docs:demos:manifest'], function() {
+    var through = require('through2');
+    var manifests = util.getManifestMeta(config.outPath + '/js/demo-data.json');
+    return gulp.src(manifests.sources)
+      .pipe(util.filePathRenamer(manifests.moduleNameByFile, manifests.demoIdByFile))
       .pipe(gulpif(/.css$/, util.prefixDemoCss()))
       .pipe(gulp.dest(config.outPath + '/demo-partials'));
   });
