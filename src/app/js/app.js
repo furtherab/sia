@@ -121,11 +121,13 @@
     var sections = [];
 
     angular.forEach(PAGES, function (page) {
-      sections.push({
-        name: page.label,
-        url: page.url,
-        type: 'link'
-      });
+      if (page.area == 'nav') {
+        sections.push({
+          name: page.label,
+          url: page.url,
+          type: 'link'
+        });
+      }
     });
 
     var demoDocs = [];
