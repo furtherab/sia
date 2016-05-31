@@ -156,7 +156,7 @@ module.exports = function (gulp, config) {
     var manifests = util.getManifestMeta(config.outPath + '/js/demo-data.json');
     return gulp.src(manifests.sources)
       .pipe(util.filePathRenamer(manifests.moduleNameByFile, manifests.demoIdByFile))
-      .pipe(gulpif(/.css$/, util.prefixDemoCss()))
+      .pipe(gulpif(function(file) { return /\.css$/.test(file.path); }, util.prefixDemoCss()))
       .pipe(gulp.dest(config.outPath + '/demo-partials'));
   });
 

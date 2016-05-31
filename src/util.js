@@ -17,16 +17,16 @@ module.exports = {
  * Renames files to make the last dirname in the path account for the module id
  */
 function filePathRenamer(moduleNameByFile, demoIdByFile) {
-    return through.obj(function(file, enc, cb) {
-      var moduleName = moduleNameByFile[file.path];
-      var demoId = demoIdByFile[file.path];
-      var fileName = path.basename(file.path);
-      var newPath = file.path.split(path.sep).slice(0, -1);
-      newPath.push(moduleName, demoId, fileName);
-      file.path = newPath.join(path.sep);
-      this.push(file);
-      cb();
-    })
+  return through.obj(function(file, enc, cb) {
+    var moduleName = moduleNameByFile[file.path];
+    var demoId = demoIdByFile[file.path];
+    var fileName = path.basename(file.path);
+    var newPath = file.path.split(path.sep).slice(0, -1);
+    newPath.push(moduleName, demoId, fileName);
+    file.path = newPath.join(path.sep);
+    this.push(file);
+    cb();
+  });
 }
 
 /**

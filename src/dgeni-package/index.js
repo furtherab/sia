@@ -22,7 +22,7 @@ module.exports = new Package('sia', [
 .config(function(readFilesProcessor, writeFilesProcessor) {
   readFilesProcessor.sourceFiles = [
     {include: 'src/**/*.js', basePath: 'src'},
-    {include: 'docs/**/*', basePath: 'docs', fileReader: 'ngdocFileReader'},
+    {include: 'pages/**/*.md', basePath: 'pages', fileReader: 'ngdocFileReader'},
   ];
 })
 
