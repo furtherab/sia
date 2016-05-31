@@ -37,7 +37,7 @@ var appDir = path.join(__dirname, 'app');
  * @param {string} [config.demoPath] Path where demos are stored. Default is a subdirectory "demo" of basePath
  * @param {string} [config.urlPath="/docs"] URL path with leading slash that serves the generated documents
  * @param {string} [config.outPath="dist/docs"] Output path where generated docs are located
- * @param {string} [config.repositoryUrl] Repository base URL
+ * @param {string} [config.sourceRepositoryBaseUrl] Base URL for linking to individual source files
  * @param {boolean} [config.debug=false] Debug mode
  */
 module.exports = function (gulp, config) {
@@ -73,7 +73,7 @@ module.exports = function (gulp, config) {
         writeFilesProcessor.outputFolder = config.outPath;
       })
       .config(function (componentDataProcessor) {
-        componentDataProcessor.repositoryUrl = config.repositoryUrl;
+        componentDataProcessor.sourceRepositoryBaseUrl = config.sourceRepositoryBaseUrl;
       });
     var dgeni = new Dgeni([dgeniPackage]);
     return dgeni.generate();

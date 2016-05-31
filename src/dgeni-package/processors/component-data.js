@@ -7,7 +7,7 @@ var _ = require('lodash');
  */
 module.exports = function componentDataProcessor() {
   return {
-    repositoryUrl: null,
+    sourceRepositoryBaseUrl: null,
     $runAfter: ['paths-computed'],
     $runBefore: ['rendering-docs'],
     $process: process
@@ -15,7 +15,7 @@ module.exports = function componentDataProcessor() {
 
   function process(docs) {
 
-    var repositoryBaseUrl = this.repositoryUrl && this.repositoryUrl + '/blob/master/src/';
+    var sourceRepositoryBaseUrl = this.sourceRepositoryBaseUrl;
 
     var components = _(docs)
       // We are not interested in docs that are not in a module
@@ -62,7 +62,7 @@ module.exports = function componentDataProcessor() {
         outputPath: doc.outputPath,
         url: doc.path,
         hasDemo: doc.docType === 'directive',
-        repositoryUrl: repositoryBaseUrl && repositoryBaseUrl + doc.fileInfo.relativePath
+        sourceRepositoryBaseUrl: sourceRepositoryBaseUrl && sourceRepositoryBaseUrl + '/' + doc.fileInfo.relativePath
       }, options || {});
     }
 
