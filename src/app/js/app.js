@@ -302,9 +302,11 @@
           },
           function (open) {
             var $ul = $element.find('ul');
-            var targetHeight = open ? getTargetHeight() : 0;
             $timeout(function () {
-              $ul.css({height: targetHeight + 'px'});
+              var targetHeight = open ? getTargetHeight() : 0;
+              $timeout(function () {
+                $ul.css({height: targetHeight + 'px'});
+              });
             }, 0, false);
 
             function getTargetHeight() {
@@ -318,7 +320,6 @@
             }
           }
         );
-
 
         var parentNode = $element[0].parentNode.parentNode.parentNode;
         if (parentNode.classList.contains('parent-list-item')) {
