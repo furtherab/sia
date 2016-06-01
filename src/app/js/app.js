@@ -160,6 +160,14 @@
 
     var apiSections = [];
 
+    if (apiDocs.object) {
+      apiSections.push({
+        name: 'Config',
+        pages: apiDocs.object.sort(sortByName),
+        type: 'toggle'
+      });
+    }
+
     if (apiDocs.service) {
       apiSections.push({
         name: 'Services',

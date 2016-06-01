@@ -65,13 +65,14 @@ function mergeDemoManifests(data, meta) {
 
       function processDemoFiles(files, fileType) {
         return files.map(function(file) {
+          var baseFile = path.basename(file);
           var demoFile = {
-            name: file,
+            name: baseFile,
             fileType: fileType,
             inputPath: path.join(manifestPath, file),
-            outputPath: 'demo-partials/' + module.name + '/' + demo.id + '/' + file
+            outputPath: 'demo-partials/' + module.name + '/' + demo.id + '/' + baseFile
           };
-          if(path.basename(file) === 'index.html') {
+          if(baseFile === 'index.html') {
             demo.index = demoFile;
             return false;
           }
