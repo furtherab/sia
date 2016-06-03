@@ -32,11 +32,11 @@ function filePathRenamer(moduleNameByFile, demoIdByFile) {
 /**
  * Prefixes a demo CSS file with the demo ID as the parent class.
  */
-function prefixDemoCss() {
+function prefixDemoCss(ngModuleNameByFile) {
   return through.obj(function(file, enc, cb) {
-    var id = getDemoIdByPath(file.path);
+    var ngModuleName = ngModuleNameByFile[file.path];
     var css = file.contents.toString('utf8');
-    css = cssPrefix({parentClass: id, prefix: ''}, css);
+    css = cssPrefix({parentClass: ngModuleName, prefix: ''}, css);
     file.contents = new Buffer(css);
     this.push(file);
     cb();
@@ -90,7 +90,7 @@ function mergeDemoManifests(data, meta) {
 
 function getManifestMeta(masterManifestPath) {
   var masterManifest = require(masterManifestPath);
-  var metaObj = {sources: [], moduleNameByFile: {}, demoIdByFile: {}};
+  var metaObj = {sources: [], moduleNameByFile: {}, demoIdByFile: {}, ngModuleNameByFile: {}};
 
   return _.reduce(masterManifest.DEMOS, function(meta, module) {
     var demos = module.demos || [];
@@ -103,6 +103,7 @@ function getManifestMeta(masterManifestPath) {
       meta.sources = meta.sources.concat(files.map(function(file) {
         meta.moduleNameByFile[file.inputPath] = module.name;
         meta.demoIdByFile[file.inputPath] = demo.id;
+        meta.ngModuleNameByFile[file.inputPath] = demo.ngModule.name;
         return file.inputPath;
       }));
 
@@ -110,19 +111,4 @@ function getManifestMeta(masterManifestPath) {
 
     return meta;
   }, metaObj);
-}
-
-function getDemoIdByPath(filePath) {
-  return filePath.split(path.sep).slice(-1)[0];
-}
-
-/**
- * Returns the ID for a demo file.
- * @private
- * @param {string} filePath
- * @returns {string}
- */
-function getDemoIdByPath(filePath) {
-  var pathParts = filePath.split(path.sep).slice(-3);
-  return pathParts[0] + pathParts[1];
 }
