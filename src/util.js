@@ -7,7 +7,6 @@ var gutil = require('gulp-util');
 var fs = require('fs');
 
 module.exports = {
-  prefixDemoCss: prefixDemoCss,
   mergeDemoManifests: mergeDemoManifests,
   getManifestMeta: getManifestMeta,
   filePathRenamer: filePathRenamer
@@ -16,29 +15,30 @@ module.exports = {
 /**
  * Renames files to make the last dirname in the path account for the module id
  */
-function filePathRenamer(moduleNameByFile, demoIdByFile) {
+function filePathRenamer(metaByFile) {
   return through.obj(function(file, enc, cb) {
-    var moduleName = moduleNameByFile[file.path];
-    var demoId = demoIdByFile[file.path];
+    var self = this;
     var fileName = path.basename(file.path);
-    var newPath = file.path.split(path.sep).slice(0, -1);
-    newPath.push(moduleName, demoId, fileName);
-    file.path = newPath.join(path.sep);
-    this.push(file);
-    cb();
-  });
-}
+    var isCSS = /\.css$/.test(file.path);
+    _.forEach(metaByFile[file.path], function(meta) {
+      var newPathTokens = file.path.split(path.sep).slice(0, -1);
+      newPathTokens.push(meta.moduleName, meta.demoId, fileName);
+      var newPath = newPathTokens.join(path.sep);
+      var nfile = new gutil.File({
+        cwd: file.cwd,
+        base: file.base,
+        path: newPath,
+        contents: file.contents
+      });
 
-/**
- * Prefixes a demo CSS file with the demo ID as the parent class.
- */
-function prefixDemoCss(ngModuleNameByFile) {
-  return through.obj(function(file, enc, cb) {
-    var ngModuleName = ngModuleNameByFile[file.path];
-    var css = file.contents.toString('utf8');
-    css = cssPrefix({parentClass: ngModuleName, prefix: ''}, css);
-    file.contents = new Buffer(css);
-    this.push(file);
+      if(isCSS) {
+        var css = file.contents.toString('utf8');
+        var ncss = cssPrefix({parentClass: meta.ngModuleName, prefix: ''}, css);
+        nfile.contents = new Buffer(ncss);
+      }
+
+      self.push(nfile);
+    });
     cb();
   });
 }
@@ -90,7 +90,7 @@ function mergeDemoManifests(data, meta) {
 
 function getManifestMeta(masterManifestPath) {
   var masterManifest = require(masterManifestPath);
-  var metaObj = {sources: [], moduleNameByFile: {}, demoIdByFile: {}, ngModuleNameByFile: {}};
+  var metaObj = {sources: [], byFile: {}};
 
   return _.reduce(masterManifest.DEMOS, function(meta, module) {
     var demos = module.demos || [];
@@ -101,9 +101,11 @@ function getManifestMeta(masterManifestPath) {
       var files = [].concat(demo.js, demo.css, demo.html, [demo.index]);
 
       meta.sources = meta.sources.concat(files.map(function(file) {
-        meta.moduleNameByFile[file.inputPath] = module.name;
-        meta.demoIdByFile[file.inputPath] = demo.id;
-        meta.ngModuleNameByFile[file.inputPath] = demo.ngModule.name;
+        append(meta.byFile, file.inputPath, {
+          moduleName: module.name,
+          demoId: demo.id,
+          ngModuleName: demo.ngModule.name
+        });
         return file.inputPath;
       }));
 
@@ -111,4 +113,9 @@ function getManifestMeta(masterManifestPath) {
 
     return meta;
   }, metaObj);
+
+  function append(obj, key, value) {
+    if(!obj[key]) obj[key] = [];
+    obj[key].push(value);
+  }
 }

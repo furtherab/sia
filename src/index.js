@@ -153,10 +153,9 @@ module.exports = function (gulp, config) {
   // Copies all files in the demo manifest to their respective folder, and prefixes CSS files
   gulp.task('docs:demos:copy', false, ['docs:demos:manifest'], function() {
     var through = require('through2');
-    var manifests = util.getManifestMeta(config.outPath + '/js/demo-data.json');
-    return gulp.src(manifests.sources)
-      .pipe(gulpif(function(file) { return /\.css$/.test(file.path); }, util.prefixDemoCss(manifests.ngModuleNameByFile)))
-      .pipe(util.filePathRenamer(manifests.moduleNameByFile, manifests.demoIdByFile))
+    var meta = util.getManifestMeta(config.outPath + '/js/demo-data.json');
+    return gulp.src(meta.sources)
+      .pipe(util.filePathRenamer(meta.byFile))
       .pipe(gulp.dest(config.outPath + '/demo-partials'));
   });
 
