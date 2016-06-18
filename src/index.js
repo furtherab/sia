@@ -12,7 +12,6 @@ var combine = require('gulp-jsoncombine');
 var ngConstant = require('gulp-ng-constant');
 var ngHtml2js = require('gulp-ng-html2js');
 var rename = require('gulp-rename');
-var server = require('gulp-webserver');
 var template = require('gulp-template');
 var uglify = require('gulp-uglify');
 var debug = require('gulp-debug');
@@ -164,23 +163,6 @@ module.exports = function (gulp, config) {
     return gulp.src(config.outPath + '/demo-partials/**/*.js')
       .pipe(concat('docs-demo-scripts.js'))
       .pipe(gulp.dest(config.outPath));
-  });
-
-  gulp.task('docs:serve', 'Serves docs', function() {
-    var host = argv.host || 'localhost';
-    var port = argv.port || '8000';
-    gulp.src(config.outPath)
-      .pipe(server({
-        host: host,
-        port: port,
-        fallback: config.urlPath + '/index.html',
-        open: 'http://' + host + ':' + port + config.urlPath
-      }));
-  }, {
-    options: {
-      'host=<host>': 'hostname of the webserver (default is localhost)',
-      'port=<port>': 'port of the webserver (default is 8000)'
-    }
   });
 
 };
