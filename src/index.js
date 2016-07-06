@@ -59,8 +59,8 @@ module.exports = function (gulp, config) {
     ], cb);
   });
 
-  gulp.task('docs:clean', false, function () {
-    return del(config.outPath);
+  gulp.task('docs:clean', 'Deletes all compiled documentation files', function () {
+    return del([config.outPath + '/*', '!' + config.outPath]);
   });
 
   // Parses ngDocs
